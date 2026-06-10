@@ -3,7 +3,197 @@ import { QUESTIONS, scoreAndRank, getArchetype, getArchetypeKey } from "./data.j
 import MapView from "./MapView.jsx";
 
 /* ─────────────────────────────────────────────
-   ARCHETYPE ICONS  (inline SVG, white stroke)
+   VIBE SCORE  —  ported from VryfID Vibes
+───────────────────────────────────────────── */
+const CATEGORY_META = {
+  schools:   { label: "Schools",   emoji: "📚", accent: "#0D9488" },
+  crime:     { label: "Safety",    emoji: "🛡️",  accent: "#059669" },
+  grocery:   { label: "Grocery",   emoji: "🛒",  accent: "#D97706" },
+  parking:   { label: "Parking",   emoji: "🅿️",  accent: "#0369A1" },
+  nightlife: { label: "Nightlife", emoji: "🍸",  accent: "#9333EA" },
+  transit:   { label: "Transit",   emoji: "🚇",  accent: "#0891B2" },
+  traffic:   { label: "Traffic",   emoji: "🚦",  accent: "#C2410C" },
+};
+
+function getVibeTier(score) {
+  if (score >= 85) return { label: "Paradise Vibes", emoji: "🌴", color: "#0D9488" };
+  if (score >= 70) return { label: "Great Vibes",    emoji: "✨",  color: "#059669" };
+  if (score >= 55) return { label: "Solid Vibes",    emoji: "😎",  color: "#D97706" };
+  if (score >= 40) return { label: "Mixed Vibes",    emoji: "🌤️", color: "#EA580C" };
+  return              { label: "Rough Vibes",    emoji: "⚠️",  color: "#DC2626" };
+}
+
+function ScoreRing({ score }) {
+  const [displayed, setDisplayed] = useState(0);
+  useEffect(() => {
+    const t = setTimeout(() => setDisplayed(score), 80);
+    return () => clearTimeout(t);
+  }, [score]);
+
+  const r = 46;
+  const circ = 2 * Math.PI * r;
+  const offset = circ * (1 - displayed / 100);
+  const tier = getVibeTier(score);
+
+  return (
+    <div className="relative flex-shrink-0" style={{ width: 112, height: 112 }}>
+      <svg
+        width="112" height="112" viewBox="0 0 112 112"
+        style={{ transform: "rotate(-90deg)" }}
+      >
+        <circle cx="56" cy="56" r={r} fill="none" stroke="#F0EAE0" strokeWidth="9" />
+        <circle
+          cx="56" cy="56" r={r}
+          fill="none"
+          stroke={tier.color}
+          strokeWidth="9"
+          strokeLinecap="round"
+          strokeDasharray={`${circ}`}
+          strokeDashoffset={`${offset}`}
+          style={{ transition: "stroke-dashoffset 1.4s cubic-bezier(0.22,1,0.36,1)" }}
+        />
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <span className="font-serif text-[#1B3A6B] leading-none" style={{ fontSize: "1.9rem", fontWeight: 700 }}>
+          {score}
+        </span>
+        <span className="text-slate-400 text-[9px] uppercase tracking-widest mt-0.5">/ 100</span>
+      </div>
+    </div>
+  );
+}
+
+function CategoryPill({ label, emoji, rating, accent }) {
+  return (
+    <div className="bg-[#FAF7F2] rounded-xl p-3">
+      <div className="flex items-center justify-between mb-1.5">
+        <span className="text-slate-500 text-xs font-medium flex items-center gap-1">
+          <span className="text-sm leading-none">{emoji}</span>
+          {label}
+        </span>
+        <span className="font-semibold text-sm tabular-nums" style={{ color: accent }}>
+          {rating}
+        </span>
+      </div>
+      <div className="h-1 rounded-full bg-[#E8E0D5] overflow-hidden">
+        <div
+          className="h-full rounded-full"
+          style={{
+            width: `${rating}%`,
+            background: accent,
+            transition: "width 1.2s cubic-bezier(0.22,1,0.36,1)",
+          }}
+        />
+      </div>
+    </div>
+  );
+}
+
+function VibeScoreSection({ listing }) {
+  const { vibeData } = listing;
+  const tier = getVibeTier(vibeData.vibeScore);
+
+  return (
+    <div className="bg-white rounded-2xl border border-[#E8E0D5] shadow-sm overflow-hidden">
+      {/* Header band */}
+      <div className="px-7 pt-6 pb-5 border-b border-[#F5F0E8]">
+        <div className="flex items-center justify-between mb-1">
+          <p className="text-[#1B3A6B] text-[10px] font-semibold uppercase tracking-[0.22em]">
+            Neighborhood Vibes
+          </p>
+          <span className="text-[10px] text-slate-300 font-medium">Powered by VryfID Vibes</span>
+        </div>
+
+        <div className="flex items-center gap-5 mt-4">
+          {/* Animated ring */}
+          <ScoreRing score={vibeData.vibeScore} />
+
+          <div className="flex-1 min-w-0">
+            <p className="font-serif text-[#1B3A6B] text-2xl mb-1">
+              {tier.label} {tier.emoji}
+            </p>
+            <p className="text-slate-500 text-sm leading-relaxed">
+              {vibeData.vibeSummary}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* 7 category pills */}
+      <div className="p-5 grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+        {Object.entries(CATEGORY_META).map(([key, meta]) => (
+          <CategoryPill
+            key={key}
+            label={meta.label}
+            emoji={meta.emoji}
+            rating={vibeData.categories[key].rating}
+            accent={meta.accent}
+          />
+        ))}
+      </div>
+
+      {/* Hidden gem */}
+      <div className="mx-5 mb-5 rounded-xl bg-[#1B3A6B] px-5 py-4 flex items-start gap-3">
+        <span className="text-xl mt-0.5 flex-shrink-0">💎</span>
+        <div>
+          <p className="text-white/50 text-[10px] font-semibold uppercase tracking-widest mb-1">
+            Hidden Gem
+          </p>
+          <p className="text-white/90 text-sm leading-relaxed">
+            {vibeData.hiddenGem}
+          </p>
+        </div>
+      </div>
+
+      {/* Nearby spots row */}
+      <div className="px-5 pb-6 grid sm:grid-cols-2 gap-3">
+        {/* Grocery */}
+        <div className="rounded-xl border border-[#F0EAE0] p-4">
+          <p className="text-[#1B3A6B] text-xs font-semibold uppercase tracking-wide mb-3 flex items-center gap-1.5">
+            🛒 Nearby Grocery
+          </p>
+          <ul className="space-y-2">
+            {vibeData.nearbyGrocery.map((g) => (
+              <li key={g.name} className="flex items-center justify-between">
+                <span className="text-slate-700 text-xs font-medium truncate mr-2">{g.name}</span>
+                <span className="text-slate-400 text-xs flex-shrink-0">{g.walkTime}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        {/* Nightlife */}
+        <div className="rounded-xl border border-[#F0EAE0] p-4">
+          <p className="text-[#1B3A6B] text-xs font-semibold uppercase tracking-wide mb-3 flex items-center gap-1.5">
+            🍸 Nearby Nightlife
+          </p>
+          <ul className="space-y-2">
+            {vibeData.nearbyNightlife.map((n) => (
+              <li key={n.name} className="flex flex-col">
+                <span className="text-slate-700 text-xs font-medium">{n.name}</span>
+                <span className="text-slate-400 text-[11px] italic">{n.vibe}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+
+      {/* Airport strip */}
+      <div className="border-t border-[#F5F0E8] px-7 py-3 flex items-center gap-2 text-xs text-slate-400">
+        <span>✈️</span>
+        <span>Nearest airport:</span>
+        <span className="text-[#1B3A6B] font-semibold">
+          {vibeData.nearestAirport.name} ({vibeData.nearestAirport.code})
+        </span>
+        <span>—</span>
+        <span>{vibeData.nearestAirport.driveTime}</span>
+      </div>
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────
+   ARCHETYPE ICONS
 ───────────────────────────────────────────── */
 function IconElevated() {
   return (
@@ -38,12 +228,11 @@ function IconModernist() {
     </svg>
   );
 }
-
 const ARCHETYPE_ICONS = {
-  elevated: <IconElevated />,
-  powerbroker: <IconPowerBroker />,
-  downtownnative: <IconDowntownNative />,
-  modernist: <IconModernist />,
+  elevated:      <IconElevated />,
+  powerbroker:   <IconPowerBroker />,
+  downtownnative:<IconDowntownNative />,
+  modernist:     <IconModernist />,
 };
 
 /* ─────────────────────────────────────────────
@@ -81,48 +270,36 @@ function Toast({ visible }) {
 function IntroView({ onStart }) {
   return (
     <div className="min-h-screen flex flex-col bg-[#1B3A6B] relative overflow-hidden">
-      {/* dot grid */}
       <div className="absolute inset-0 opacity-[0.07]" style={{ backgroundImage: "radial-gradient(circle at 1px 1px, white 1px, transparent 0)", backgroundSize: "30px 30px" }} />
-      {/* bottom dark fade */}
       <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-[#0D2144] to-transparent" />
 
       <div className="relative flex-1 flex flex-col max-w-3xl mx-auto w-full px-6 py-12">
         <Logo light />
-
         <div className="flex-1 flex flex-col justify-center py-16 text-center">
           <div className="inline-flex items-center gap-2 justify-center mb-7">
             <div className="h-px w-8 bg-white/20" />
             <span className="text-[#93C5FD] text-[10px] font-semibold uppercase tracking-[0.25em]">Manhattan · Home Type Quiz</span>
             <div className="h-px w-8 bg-white/20" />
           </div>
-
           <h1 className="font-serif text-white text-5xl md:text-[4rem] leading-[1.06] mb-6">
-            Your home says
-            <br />
+            Your home says<br />
             <em className="not-italic text-[#BFDBFE]">everything about you.</em>
           </h1>
-
           <p className="text-white/50 text-lg font-light leading-relaxed max-w-md mx-auto mb-12">
-            Three questions. One Manhattan type. Your matched address — waiting.
+            Three questions. One Manhattan type. Your matched address — with a full neighborhood vibe score.
           </p>
-
           <div className="flex flex-col items-center gap-3">
-            <button
-              onClick={onStart}
-              className="inline-flex items-center gap-2.5 px-9 py-4 bg-white text-[#1B3A6B] rounded-full font-semibold text-sm hover:bg-[#DBEAFE] active:scale-[0.97] transition-all duration-200 shadow-lg shadow-black/20"
-            >
+            <button onClick={onStart} className="inline-flex items-center gap-2.5 px-9 py-4 bg-white text-[#1B3A6B] rounded-full font-semibold text-sm hover:bg-[#DBEAFE] active:scale-[0.97] transition-all duration-200 shadow-lg shadow-black/20">
               Discover My Type
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
               </svg>
             </button>
-            <p className="text-white/25 text-xs">8 verified listings · takes 30 seconds</p>
+            <p className="text-white/25 text-xs">8 verified listings · neighborhood vibe scores · 30 seconds</p>
           </div>
         </div>
-
-        {/* stat strip */}
         <div className="border-t border-white/10 pt-6 flex justify-center gap-10">
-          {[["4", "Manhattan types"], ["8", "curated listings"], ["30s", "to your match"]].map(([v, l]) => (
+          {[["4", "Manhattan types"], ["8", "curated listings"], ["7", "vibe categories"]].map(([v, l]) => (
             <div key={l} className="text-center">
               <p className="text-white font-semibold text-xl">{v}</p>
               <p className="text-white/30 text-xs mt-0.5">{l}</p>
@@ -141,7 +318,6 @@ function QuestionView({ question, questionIndex, total, answers, onAnswer, onBac
   const letters = ["A", "B", "C", "D"];
   return (
     <div className="min-h-screen flex flex-col bg-[#FAF7F2]">
-      {/* nav */}
       <div className="max-w-2xl mx-auto w-full px-6 pt-8 flex items-center justify-between">
         <button onClick={onBack} className="flex items-center gap-1.5 text-slate-400 hover:text-[#1B3A6B] text-sm transition-colors">
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -149,7 +325,6 @@ function QuestionView({ question, questionIndex, total, answers, onAnswer, onBac
           </svg>
           Back
         </button>
-        {/* progress pills */}
         <div className="flex gap-1.5 items-center">
           {Array.from({ length: total }).map((_, i) => (
             <div key={i} className={`h-1 rounded-full transition-all duration-300 ${i < questionIndex ? "w-5 bg-[#1B3A6B]" : i === questionIndex ? "w-9 bg-[#1B3A6B]" : "w-3 bg-[#E0D9D0]"}`} />
@@ -158,36 +333,18 @@ function QuestionView({ question, questionIndex, total, answers, onAnswer, onBac
         <span className="text-slate-400 text-xs w-10 text-right">{questionIndex + 1}/{total}</span>
       </div>
 
-      {/* content */}
       <div className="flex-1 flex flex-col justify-center max-w-2xl mx-auto w-full px-6 py-12">
-        <p className="text-[#1B3A6B]/40 text-[11px] font-semibold uppercase tracking-[0.22em] mb-5">
-          Question {questionIndex + 1} of {total}
-        </p>
-        <h2 className="font-serif text-[#1B3A6B] text-[2.5rem] leading-tight mb-10">
-          {question.question}
-        </h2>
-
+        <p className="text-[#1B3A6B]/40 text-[11px] font-semibold uppercase tracking-[0.22em] mb-5">Question {questionIndex + 1} of {total}</p>
+        <h2 className="font-serif text-[#1B3A6B] text-[2.5rem] leading-tight mb-10">{question.question}</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {question.options.map((opt, i) => {
             const selected = answers[question.id] === opt.value;
             return (
-              <button
-                key={opt.value}
-                onClick={() => onAnswer(question.id, opt.value)}
-                className={`group relative text-left px-5 py-4 rounded-2xl border-2 transition-all duration-200 active:scale-[0.98] ${selected ? "border-[#1B3A6B] bg-[#1B3A6B]" : "border-[#E0D9D0] bg-white hover:border-[#1B3A6B]"}`}
-              >
-                {/* letter badge */}
-                <span className={`absolute top-3.5 right-4 text-[11px] font-semibold ${selected ? "text-white/30" : "text-slate-200 group-hover:text-slate-300"}`}>
-                  {letters[i]}
-                </span>
-                <p className={`font-semibold text-sm leading-snug ${selected ? "text-white" : "text-[#1B3A6B]"}`}>
-                  {opt.label}
-                </p>
-                {opt.sub && (
-                  <p className={`text-xs mt-0.5 ${selected ? "text-white/60" : "text-slate-400"}`}>
-                    {opt.sub}
-                  </p>
-                )}
+              <button key={opt.value} onClick={() => onAnswer(question.id, opt.value)}
+                className={`group relative text-left px-5 py-4 rounded-2xl border-2 transition-all duration-200 active:scale-[0.98] ${selected ? "border-[#1B3A6B] bg-[#1B3A6B]" : "border-[#E0D9D0] bg-white hover:border-[#1B3A6B]"}`}>
+                <span className={`absolute top-3.5 right-4 text-[11px] font-semibold ${selected ? "text-white/30" : "text-slate-200 group-hover:text-slate-300"}`}>{letters[i]}</span>
+                <p className={`font-semibold text-sm leading-snug ${selected ? "text-white" : "text-[#1B3A6B]"}`}>{opt.label}</p>
+                {opt.sub && <p className={`text-xs mt-0.5 ${selected ? "text-white/60" : "text-slate-400"}`}>{opt.sub}</p>}
               </button>
             );
           })}
@@ -198,17 +355,12 @@ function QuestionView({ question, questionIndex, total, answers, onAnswer, onBac
 }
 
 /* ─────────────────────────────────────────────
-   ANALYZING  (fake loading for drama)
+   ANALYZING
 ───────────────────────────────────────────── */
-const ANALYZING_PHASES = [
-  "Reading your answers…",
-  "Mapping Manhattan types…",
-  "Your type is ready.",
-];
+const ANALYZING_PHASES = ["Reading your answers…", "Scoring 7 vibe categories…", "Your type is ready."];
 
 function AnalyzingView({ onDone }) {
   const [phase, setPhase] = useState(0);
-
   useEffect(() => {
     const t1 = setTimeout(() => setPhase(1), 700);
     const t2 = setTimeout(() => setPhase(2), 1400);
@@ -219,67 +371,46 @@ function AnalyzingView({ onDone }) {
   return (
     <div className="min-h-screen bg-[#0D2144] flex items-center justify-center">
       <div className="text-center px-6">
-        {/* pulsing shield */}
         <div className="w-16 h-16 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mx-auto mb-10"
           style={{ animation: "pulse 1.6s ease-in-out infinite" }}>
           <svg className="w-7 h-7 text-white/60" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
           </svg>
         </div>
-
-        <p key={phase} className="font-serif text-white text-2xl md:text-3xl mb-8"
-          style={{ animation: "fadeSlideUp .4s cubic-bezier(.16,1,.3,1) both" }}>
+        <p key={phase} className="font-serif text-white text-2xl md:text-3xl mb-8" style={{ animation: "fadeSlideUp .4s cubic-bezier(.16,1,.3,1) both" }}>
           {ANALYZING_PHASES[phase]}
         </p>
-
-        {/* progress dots */}
         <div className="flex gap-2 justify-center">
           {ANALYZING_PHASES.map((_, i) => (
             <div key={i} className={`rounded-full transition-all duration-400 ${i <= phase ? "w-6 h-1 bg-white" : "w-2 h-1 bg-white/20"}`} />
           ))}
         </div>
       </div>
-
       <style>{`
-        @keyframes pulse {
-          0%, 100% { opacity: 1; transform: scale(1); }
-          50%       { opacity: .6; transform: scale(.94); }
-        }
-        @keyframes fadeSlideUp {
-          from { opacity: 0; transform: translateY(14px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
+        @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.6;transform:scale(.94)} }
+        @keyframes fadeSlideUp { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
       `}</style>
     </div>
   );
 }
 
 /* ─────────────────────────────────────────────
-   ARCHETYPE REVEAL CARD  (the viral moment)
+   ARCHETYPE REVEAL
 ───────────────────────────────────────────── */
 function ArchetypeCard({ archetypeKey, archetype, match, onScrollDown }) {
   const [copied, setCopied] = useState(false);
-
   async function handleCopy() {
-    const text = `I'm ${archetype.name} — my Manhattan home type.\n\n"${archetype.tagline}"\n\nFind yours at vryfid.com`;
-    try {
-      await navigator.clipboard.writeText(text);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2500);
-    } catch {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2500);
-    }
+    const text = `I'm ${archetype.name} — my Manhattan home type.\n\n"${archetype.tagline}"\n\nNeighborhood Vibe Score: ${match.vibeData.vibeScore}/100\n\nFind yours at vryfid.com`;
+    try { await navigator.clipboard.writeText(text); } catch {}
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2500);
   }
 
   return (
     <div className="relative overflow-hidden bg-[#0D2144] min-h-[92vh] flex flex-col">
-      {/* dot grid */}
       <div className="absolute inset-0 opacity-[0.06]" style={{ backgroundImage: "radial-gradient(circle at 1px 1px, white 1px, transparent 0)", backgroundSize: "28px 28px" }} />
-      {/* top-right glow */}
       <div className="absolute -top-32 -right-32 w-96 h-96 rounded-full bg-[#2A5298] opacity-20 blur-3xl pointer-events-none" />
 
-      {/* nav */}
       <div className="relative z-10 max-w-4xl mx-auto w-full px-6 pt-6 flex items-center justify-between">
         <Logo light />
         <button onClick={onScrollDown} className="flex items-center gap-1.5 text-white/40 hover:text-white/70 text-xs transition-colors">
@@ -290,77 +421,61 @@ function ArchetypeCard({ archetypeKey, archetype, match, onScrollDown }) {
         </button>
       </div>
 
-      {/* main content */}
       <div className="relative z-10 flex-1 flex flex-col items-center justify-center text-center max-w-3xl mx-auto w-full px-6 py-12">
-        {/* icon ring */}
         <div className="w-16 h-16 rounded-2xl border border-white/15 bg-white/5 flex items-center justify-center text-white mb-8"
           style={{ animation: "fadeSlideUp .4s cubic-bezier(.16,1,.3,1) both" }}>
           {ARCHETYPE_ICONS[archetypeKey]}
         </div>
 
-        {/* YOU ARE label */}
         <p className="text-white/35 text-[10px] font-semibold uppercase tracking-[0.28em] mb-4"
           style={{ animation: "fadeSlideUp .45s .05s cubic-bezier(.16,1,.3,1) both" }}>
           You are
         </p>
 
-        {/* NAME — the big moment */}
         <h2 className="font-serif text-white text-[3.2rem] md:text-[4.5rem] leading-[1.0] mb-5"
           style={{ animation: "fadeSlideUp .5s .1s cubic-bezier(.16,1,.3,1) both" }}>
           {archetype.name}
         </h2>
 
-        {/* tagline */}
         <p className="text-[#93C5FD] text-lg md:text-xl font-light italic leading-snug max-w-lg mb-6"
           style={{ animation: "fadeSlideUp .5s .18s cubic-bezier(.16,1,.3,1) both" }}>
           "{archetype.tagline}"
         </p>
 
-        {/* description */}
-        <p className="text-white/55 text-base font-light leading-relaxed max-w-md mb-10"
+        <p className="text-white/55 text-base font-light leading-relaxed max-w-md mb-6"
           style={{ animation: "fadeSlideUp .5s .25s cubic-bezier(.16,1,.3,1) both" }}>
           {archetype.description}
         </p>
 
-        {/* match preview line */}
+        {/* Vibe score teaser */}
+        <div className="flex items-center gap-3 mb-8 px-4 py-2.5 rounded-full border border-white/10 bg-white/5"
+          style={{ animation: "fadeSlideUp .5s .3s cubic-bezier(.16,1,.3,1) both" }}>
+          <span className="text-[#93C5FD] text-xs font-semibold">Vibe Score</span>
+          <span className="text-white font-serif text-lg font-bold">{match.vibeData.vibeScore}</span>
+          <span className="text-white/30 text-xs">/ 100 · {getVibeTier(match.vibeData.vibeScore).label} {getVibeTier(match.vibeData.vibeScore).emoji}</span>
+        </div>
+
         <div className="flex items-center gap-2 mb-10 px-4 py-2.5 rounded-full border border-white/10 bg-white/5"
-          style={{ animation: "fadeSlideUp .5s .32s cubic-bezier(.16,1,.3,1) both" }}>
+          style={{ animation: "fadeSlideUp .5s .35s cubic-bezier(.16,1,.3,1) both" }}>
           <svg className="w-3.5 h-3.5 text-[#93C5FD]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 2C8.134 2 5 5.134 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.866-3.134-7-7-7z" />
           </svg>
           <span className="text-white/50 text-xs">Your match —</span>
           <span className="text-white text-xs font-semibold">{match.street}</span>
-          <span className="text-white/30 text-xs">{match.neighborhood}</span>
         </div>
 
-        {/* CTAs */}
         <div className="flex flex-col sm:flex-row gap-3 items-center"
-          style={{ animation: "fadeSlideUp .5s .38s cubic-bezier(.16,1,.3,1) both" }}>
-          <button
-            onClick={handleCopy}
-            className={`flex items-center gap-2 px-6 py-3 rounded-full border text-sm font-semibold transition-all duration-200 ${copied ? "bg-white text-[#1B3A6B] border-white" : "bg-white/8 text-white border-white/20 hover:bg-white/15"}`}
-          >
+          style={{ animation: "fadeSlideUp .5s .42s cubic-bezier(.16,1,.3,1) both" }}>
+          <button onClick={handleCopy}
+            className={`flex items-center gap-2 px-6 py-3 rounded-full border text-sm font-semibold transition-all duration-200 ${copied ? "bg-white text-[#1B3A6B] border-white" : "bg-white/8 text-white border-white/20 hover:bg-white/15"}`}>
             {copied ? (
-              <>
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                </svg>
-                Copied — share it
-              </>
+              <><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>Copied — share it</>
             ) : (
-              <>
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                </svg>
-                Copy your type
-              </>
+              <><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>Copy your type</>
             )}
           </button>
-
-          <button
-            onClick={onScrollDown}
-            className="flex items-center gap-2 px-6 py-3 rounded-full bg-white text-[#1B3A6B] text-sm font-semibold hover:bg-[#DBEAFE] active:scale-[0.97] transition-all duration-200"
-          >
+          <button onClick={onScrollDown}
+            className="flex items-center gap-2 px-6 py-3 rounded-full bg-white text-[#1B3A6B] text-sm font-semibold hover:bg-[#DBEAFE] active:scale-[0.97] transition-all duration-200">
             See your match
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
@@ -370,56 +485,91 @@ function ArchetypeCard({ archetypeKey, archetype, match, onScrollDown }) {
       </div>
 
       <style>{`
-        @keyframes fadeSlideUp {
-          from { opacity: 0; transform: translateY(16px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
+        @keyframes fadeSlideUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
       `}</style>
     </div>
   );
 }
 
 /* ─────────────────────────────────────────────
-   RESULTS  (listing + map section)
+   ALSO CONSIDER  (clickable)
 ───────────────────────────────────────────── */
-function AlsoConsiderCard({ listing, rank }) {
+function AlsoConsiderCard({ listing, rank, isViewing, onSelect }) {
+  const tier = getVibeTier(listing.vibeData.vibeScore);
   return (
-    <div className="bg-white rounded-2xl p-5 border border-[#E8E0D5] flex gap-4 items-start">
-      <div className="flex-shrink-0 w-9 h-9 rounded-full bg-[#FAF7F2] border border-[#E8E0D5] flex items-center justify-center">
-        <span className="text-[#1B3A6B] text-xs font-semibold">#{rank}</span>
-      </div>
-      <div className="flex-1 min-w-0">
-        <p className="text-[#1B3A6B] font-semibold text-sm truncate">{listing.street}</p>
-        <p className="text-slate-400 text-xs mt-0.5 mb-2">{listing.neighborhood} · {listing.unit}</p>
-        <div className="flex items-center justify-between">
-          <span className="text-[#1B3A6B] font-semibold text-sm">{listing.price}<span className="text-slate-400 font-normal text-xs">/mo</span></span>
-          <span className="text-slate-400 text-xs">{listing.beds} bd · {listing.sqft} sf</span>
+    <button
+      onClick={() => onSelect(listing)}
+      className={`w-full text-left rounded-2xl p-5 border-2 transition-all duration-200 hover:shadow-md active:scale-[0.98] ${
+        isViewing
+          ? "border-[#1B3A6B] bg-[#1B3A6B] shadow-lg"
+          : "border-[#E8E0D5] bg-white hover:border-[#1B3A6B]"
+      }`}
+    >
+      <div className="flex items-start gap-4">
+        <div className={`flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center text-xs font-semibold ${
+          isViewing ? "bg-white/20 text-white" : "bg-[#FAF7F2] border border-[#E8E0D5] text-[#1B3A6B]"
+        }`}>
+          #{rank}
         </div>
-        <div className="flex flex-wrap gap-1 mt-2">
-          {listing.tags.slice(0, 2).map((t) => (
-            <span key={t} className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-[#DBEAFE] text-[#1B3A6B]">{t}</span>
-          ))}
+        <div className="flex-1 min-w-0">
+          <p className={`font-semibold text-sm truncate ${isViewing ? "text-white" : "text-[#1B3A6B]"}`}>
+            {listing.street}
+          </p>
+          <p className={`text-xs mt-0.5 mb-2 ${isViewing ? "text-white/60" : "text-slate-400"}`}>
+            {listing.neighborhood} · {listing.unit}
+          </p>
+          <div className="flex items-center justify-between">
+            <span className={`font-semibold text-sm ${isViewing ? "text-white" : "text-[#1B3A6B]"}`}>
+              {listing.price}<span className={`font-normal text-xs ${isViewing ? "text-white/50" : "text-slate-400"}`}>/mo</span>
+            </span>
+            <span className={`text-xs font-semibold ${isViewing ? "text-white/70" : ""}`} style={{ color: isViewing ? undefined : tier.color }}>
+              {listing.vibeData.vibeScore} {tier.emoji}
+            </span>
+          </div>
+          <div className="flex flex-wrap gap-1 mt-2">
+            {listing.tags.slice(0, 2).map((t) => (
+              <span key={t} className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${
+                isViewing ? "bg-white/15 text-white" : "bg-[#DBEAFE] text-[#1B3A6B]"
+              }`}>{t}</span>
+            ))}
+          </div>
         </div>
       </div>
-    </div>
+    </button>
   );
 }
 
+/* ─────────────────────────────────────────────
+   LISTING SECTION  (main results view)
+───────────────────────────────────────────── */
 function ListingSection({ ranked, message, onMessageChange, onSend, onStartOver, toast, detailsRef }) {
-  const match = ranked[0];
-  if (!match) return null;
+  const [viewing, setViewing] = useState(ranked[0]);
+  const mapRef = useRef(null);
+
+  function selectListing(l) {
+    setViewing(l);
+    setTimeout(() => mapRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
+  }
+
+  const isPrimary = viewing.id === ranked[0].id;
 
   return (
     <div className="bg-[#FAF7F2]" ref={detailsRef}>
-      {/* sticky mini nav */}
+      {/* sticky nav */}
       <div className="bg-white border-b border-[#E8E0D5] sticky top-0 z-40">
         <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 min-w-0">
             <Logo />
-            <span className="text-[#E8E0D5]">·</span>
-            <span className="text-slate-400 text-sm hidden sm:block">{match.street}</span>
+            <span className="text-[#E8E0D5] hidden sm:block">·</span>
+            <span className="text-slate-400 text-sm hidden sm:block truncate">{viewing.street}</span>
+            {!isPrimary && (
+              <button onClick={() => selectListing(ranked[0])}
+                className="ml-1 px-2.5 py-1 rounded-full bg-[#DBEAFE] text-[#1B3A6B] text-xs font-semibold hover:bg-[#BFDBFE] transition-colors">
+                ← #1 Match
+              </button>
+            )}
           </div>
-          <button onClick={onStartOver} className="flex items-center gap-1.5 text-slate-400 hover:text-[#1B3A6B] text-sm transition-colors">
+          <button onClick={onStartOver} className="flex items-center gap-1.5 text-slate-400 hover:text-[#1B3A6B] text-sm transition-colors flex-shrink-0">
             <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
             </svg>
@@ -429,30 +579,42 @@ function ListingSection({ ranked, message, onMessageChange, onSend, onStartOver,
       </div>
 
       <div className="max-w-5xl mx-auto px-6 py-10">
-        {/* map */}
-        <div className="mb-6">
-          <MapView listing={match} />
+
+        {/* match / viewing context */}
+        <div className="flex items-center gap-3 mb-6" ref={mapRef}>
+          <span className={`px-3 py-1 rounded-full text-[11px] font-semibold ${isPrimary ? "bg-[#1B3A6B] text-white" : "bg-[#DBEAFE] text-[#1B3A6B]"}`}>
+            {isPrimary ? "#1 Match" : "Also Consider"}
+          </span>
+          <h2 className="font-serif text-[#1B3A6B] text-2xl md:text-3xl leading-tight truncate">{viewing.street}</h2>
+          <span className="text-slate-400 text-sm hidden md:block flex-shrink-0">{viewing.neighborhood}</span>
         </div>
 
-        {/* details + message */}
-        <div className="grid md:grid-cols-5 gap-5 mb-10">
+        {/* map */}
+        <div className="mb-6">
+          <MapView listing={viewing} />
+        </div>
+
+        {/* listing details + message */}
+        <div className="grid md:grid-cols-5 gap-5 mb-5">
           {/* listing card */}
           <div className="md:col-span-3 bg-white rounded-2xl p-7 border border-[#E8E0D5] shadow-sm">
             <div className="flex items-start justify-between mb-5">
               <div>
-                <p className="text-[#1B3A6B] text-[11px] font-semibold uppercase tracking-widest mb-1">{match.neighborhood} · {match.unit}</p>
-                <h3 className="font-serif text-[#1B3A6B] text-3xl">{match.street}</h3>
-                <p className="text-slate-400 text-sm mt-1">{match.city}</p>
+                <p className="text-[#1B3A6B] text-[11px] font-semibold uppercase tracking-widest mb-1">{viewing.unit}</p>
+                <div className="flex items-baseline gap-1.5">
+                  <span className="font-serif text-[#1B3A6B] text-3xl">{viewing.price}</span>
+                  <span className="text-slate-400 text-sm">{viewing.period}</span>
+                </div>
               </div>
               <div className="flex flex-col items-end gap-1.5 flex-shrink-0 ml-4">
-                {match.tags.map((t) => (
+                {viewing.tags.map((t) => (
                   <span key={t} className="px-2.5 py-1 rounded-full text-xs font-medium bg-[#DBEAFE] text-[#1B3A6B] whitespace-nowrap">{t}</span>
                 ))}
               </div>
             </div>
 
             <div className="grid grid-cols-3 gap-3 mb-6">
-              {[["Beds", match.beds], ["Baths", match.baths], ["Sq Ft", match.sqft]].map(([label, val]) => (
+              {[["Beds", viewing.beds], ["Baths", viewing.baths], ["Sq Ft", viewing.sqft]].map(([label, val]) => (
                 <div key={label} className="bg-[#FAF7F2] rounded-xl p-3 text-center">
                   <p className="text-[#1B3A6B] font-semibold text-xl leading-none mb-1">{val}</p>
                   <p className="text-slate-400 text-[11px] uppercase tracking-wide">{label}</p>
@@ -460,23 +622,18 @@ function ListingSection({ ranked, message, onMessageChange, onSend, onStartOver,
               ))}
             </div>
 
-            <div className="flex items-baseline gap-1.5 mb-5">
-              <span className="font-serif text-[#1B3A6B] text-2xl">{match.price}</span>
-              <span className="text-slate-400 text-sm">{match.period}</span>
-            </div>
-
-            <p className="text-slate-600 text-sm leading-relaxed">{match.description}</p>
+            <p className="text-slate-600 text-sm leading-relaxed">{viewing.description}</p>
           </div>
 
           {/* message card */}
           <div className="md:col-span-2 bg-white rounded-2xl p-6 border border-[#E8E0D5] shadow-sm flex flex-col">
             <div className="flex items-center gap-3 mb-5 pb-5 border-b border-[#F0EAE0]">
               <div className="w-10 h-10 rounded-full bg-[#1B3A6B] flex items-center justify-center text-white font-semibold text-sm flex-shrink-0">
-                {match.agent.split(" ").map((n) => n[0]).join("")}
+                {viewing.agent.split(" ").map((n) => n[0]).join("")}
               </div>
               <div>
-                <p className="text-[#1B3A6B] font-semibold text-sm">{match.agent}</p>
-                <p className="text-slate-400 text-xs">{match.agentTitle}</p>
+                <p className="text-[#1B3A6B] font-semibold text-sm">{viewing.agent}</p>
+                <p className="text-slate-400 text-xs">{viewing.agentTitle}</p>
               </div>
               <div className="ml-auto flex items-center gap-1.5 flex-shrink-0">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
@@ -490,39 +647,47 @@ function ListingSection({ ranked, message, onMessageChange, onSend, onStartOver,
             <textarea
               value={message}
               onChange={(e) => onMessageChange(e.target.value)}
-              placeholder={`Hi ${match.agent.split(" ")[0]}, I'd love to learn more about ${match.street}…`}
+              placeholder={`Hi ${viewing.agent.split(" ")[0]}, I'd love to learn more about ${viewing.street}…`}
               rows={5}
               className="flex-1 w-full resize-none rounded-xl border border-[#E8E0D5] bg-[#FAF7F2] px-4 py-3 text-sm text-[#1B3A6B] placeholder:text-slate-300 outline-none focus:border-[#93C5FD] focus:ring-2 focus:ring-[#DBEAFE] transition-all duration-200"
             />
 
-            <button
-              onClick={onSend}
-              disabled={!message.trim()}
-              className="mt-3 w-full py-3 rounded-xl text-sm font-semibold bg-[#1B3A6B] text-white hover:bg-[#0D2144] active:scale-[0.98] disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-200"
-            >
+            <button onClick={onSend} disabled={!message.trim()}
+              className="mt-3 w-full py-3 rounded-xl text-sm font-semibold bg-[#1B3A6B] text-white hover:bg-[#0D2144] active:scale-[0.98] disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-200">
               Send Message
             </button>
             <p className="text-center text-slate-300 text-[11px] mt-3">VryfID connects verified renters only</p>
           </div>
         </div>
 
-        {/* also consider */}
+        {/* VIBE SCORE — full width, keyed to re-animate on listing change */}
+        <div key={`vibes-${viewing.id}`} className="mb-10">
+          <VibeScoreSection listing={viewing} />
+        </div>
+
+        {/* Also Consider */}
         {ranked.length > 1 && (
           <div>
             <div className="flex items-center gap-3 mb-4">
               <h3 className="font-serif text-[#1B3A6B] text-2xl">Also Consider</h3>
               <div className="flex-1 h-px bg-[#E8E0D5]" />
+              <span className="text-slate-400 text-xs">click to explore</span>
             </div>
             <div className="grid md:grid-cols-3 gap-4">
               {ranked.slice(1, 4).map((l, i) => (
-                <AlsoConsiderCard key={l.id} listing={l} rank={i + 2} />
+                <AlsoConsiderCard
+                  key={l.id}
+                  listing={l}
+                  rank={i + 2}
+                  isViewing={viewing.id === l.id}
+                  onSelect={selectListing}
+                />
               ))}
             </div>
           </div>
         )}
       </div>
 
-      {/* footer */}
       <footer className="border-t border-[#E8E0D5] mt-4">
         <div className="max-w-5xl mx-auto px-6 py-7 flex flex-col md:flex-row items-center justify-between gap-3">
           <Logo />
@@ -551,12 +716,10 @@ export default function App() {
   function handleAnswer(questionId, value) {
     const newAnswers = { ...answers, [questionId]: value };
     setAnswers(newAnswers);
-
     const qIndex = QUESTIONS.findIndex((q) => q.id === questionId);
     if (qIndex < QUESTIONS.length - 1) {
       setStep(qIndex + 1);
     } else {
-      // Last question answered — pre-compute, then show analyzing
       const results = scoreAndRank(newAnswers);
       const key = getArchetypeKey(newAnswers.location);
       setRanked(results);
@@ -584,9 +747,7 @@ export default function App() {
   }
 
   function scrollToDetails() {
-    setTimeout(() => {
-      detailsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-    }, 50);
+    setTimeout(() => detailsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
   }
 
   return (
@@ -604,9 +765,7 @@ export default function App() {
         />
       )}
 
-      {step === "analyzing" && (
-        <AnalyzingView onDone={() => setStep("results")} />
-      )}
+      {step === "analyzing" && <AnalyzingView onDone={() => setStep("results")} />}
 
       {step === "results" && archetype && (
         <>
