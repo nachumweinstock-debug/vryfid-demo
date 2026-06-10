@@ -185,10 +185,63 @@ export const LISTINGS = [
   },
 ];
 
+// Q1 → location, Q2 → priority, Q3 → budget (practical question lands last)
 export const QUESTIONS = [
   {
+    id: "location",
+    question: "Your Sunday morning looks like…",
+    options: [
+      {
+        value: "upper",
+        label: "Central Park walk",
+        sub: "Coffee in hand. City just waking up.",
+      },
+      {
+        value: "downtown",
+        label: "Brunch in TriBeCa",
+        sub: "Somewhere nobody's reviewed yet.",
+      },
+      {
+        value: "west",
+        label: "The High Line early",
+        sub: "Before the crowds hit.",
+      },
+      {
+        value: "midtown",
+        label: "Room service. Do not disturb.",
+        sub: "No apologies.",
+      },
+    ],
+  },
+  {
+    id: "priority",
+    question: "Your apartment needs one thing above all else…",
+    options: [
+      {
+        value: "views",
+        label: "A view that stops me cold",
+        sub: "Every single morning.",
+      },
+      {
+        value: "neighborhood",
+        label: "The right block",
+        sub: "I need to love coming home.",
+      },
+      {
+        value: "space",
+        label: "Room to actually exhale",
+        sub: "Four walls that don't close in.",
+      },
+      {
+        value: "amenities",
+        label: "Service that anticipates",
+        sub: "I shouldn't have to ask.",
+      },
+    ],
+  },
+  {
     id: "budget",
-    question: "What's your monthly budget?",
+    question: "Realistically, your monthly budget…",
     options: [
       { value: "under15", label: "Under $15,000" },
       { value: "15to22", label: "$15,000 – $22,000" },
@@ -196,59 +249,49 @@ export const QUESTIONS = [
       { value: "35plus", label: "$35,000 and up" },
     ],
   },
-  {
-    id: "priority",
-    question: "What matters most to you?",
-    options: [
-      {
-        value: "views",
-        label: "Views & Prestige",
-        sub: "Park, skyline, iconic address",
-      },
-      {
-        value: "neighborhood",
-        label: "Neighborhood & Energy",
-        sub: "Scene, walkability, culture",
-      },
-      {
-        value: "space",
-        label: "Space & Calm",
-        sub: "Room to breathe, quieter streets",
-      },
-      {
-        value: "amenities",
-        label: "Amenities & Service",
-        sub: "Pool, concierge, hotel-grade",
-      },
-    ],
-  },
-  {
-    id: "location",
-    question: "Where do you feel most at home?",
-    options: [
-      {
-        value: "upper",
-        label: "Central Park Area",
-        sub: "Upper West / Billionaires' Row",
-      },
-      {
-        value: "midtown",
-        label: "Midtown Corridor",
-        sub: "57th Street, Park Ave",
-      },
-      {
-        value: "downtown",
-        label: "Downtown / TriBeCa",
-        sub: "TriBeCa, FiDi, Lower Manhattan",
-      },
-      {
-        value: "west",
-        label: "West Side",
-        sub: "Hudson Yards, Chelsea",
-      },
-    ],
-  },
 ];
+
+export const ARCHETYPES = {
+  elevated: {
+    name: "The Elevated",
+    tagline: "You don't live near the city. You live above it.",
+    description:
+      "Every morning starts with a view that stops you cold. You chose this address because standing above the skyline isn't a luxury — it's a requirement. The rest of the city can look up.",
+  },
+  powerbroker: {
+    name: "The Power Broker",
+    tagline: "The address isn't a detail. It's the whole point.",
+    description:
+      "Midtown is the center of everything that matters and you know it. Your apartment isn't where you sleep — it's where you operate from. The doorman knows your name before you tell him.",
+  },
+  downtownnative: {
+    name: "The Downtown Native",
+    tagline: "You chose character over convenience. On purpose.",
+    description:
+      "These streets had stories before you arrived and they'll have more after. You're not renting square footage — you're buying into a neighborhood. The coffee place knows your order. That matters more than marble.",
+  },
+  modernist: {
+    name: "The New Yorkist",
+    tagline: "New isn't a compromise. It's the whole point.",
+    description:
+      "You want the city designed exactly right — the pool, the service, the roof terrace. You're not nostalgic about grit. You're already building what comes next.",
+  },
+};
+
+const LOCATION_TO_KEY = {
+  upper: "elevated",
+  midtown: "powerbroker",
+  downtown: "downtownnative",
+  west: "modernist",
+};
+
+export function getArchetypeKey(location) {
+  return LOCATION_TO_KEY[location] ?? "elevated";
+}
+
+export function getArchetype(location) {
+  return ARCHETYPES[getArchetypeKey(location)];
+}
 
 const BUDGET_RANGES = {
   under15: [0, 14999],
