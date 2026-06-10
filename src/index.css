@@ -22,12 +22,12 @@ body {
 }
 
 /* ─────────────────────────────────────────────
-   MAP  —  warm tile filter
-   Pulls CartoDB Positron toward our cream palette.
-   Barely perceptible but removes the cold blue cast.
+   MAP  —  subtle crisp filter
+   Voyager tiles have rich colour already.
+   Just a light contrast pop — water stays blue.
 ───────────────────────────────────────────── */
 .vryfid-map .leaflet-tile-pane {
-  filter: contrast(1.07) saturate(0.68) sepia(0.07) brightness(1.02);
+  filter: contrast(1.08) brightness(1.01) saturate(1.06);
 }
 
 /* Hide leaflet's default attribution badge (we keep our own) */

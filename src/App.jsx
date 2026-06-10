@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
-import { QUESTIONS, scoreAndRank, getArchetype, getArchetypeKey } from "./data.js";
+import { toPng } from "html-to-image";
+import { QUESTIONS, scoreAndRank, getArchetype, getArchetypeKey, ARCHETYPES } from "./data.js";
 import MapView from "./MapView.jsx";
 
 /* ─────────────────────────────────────────────
@@ -89,11 +90,249 @@ function CategoryPill({ label, emoji, rating, accent }) {
   );
 }
 
-function VibeScoreSection({ listing }) {
+/* ─────────────────────────────────────────────
+   SHARE CARD  —  matches VryfID Vibes share format
+   Renders at 380×676 (9:16 ratio).
+   Captured at 2× by html-to-image → 760×1352 PNG.
+   All styles are inline for reliable html-to-image capture.
+───────────────────────────────────────────── */
+function ShareCard({ listing, archetypeName, cardRef }) {
   const { vibeData } = listing;
   const tier = getVibeTier(vibeData.vibeScore);
 
+  const top3 = Object.entries(CATEGORY_META)
+    .map(([key, meta]) => ({ key, ...meta, rating: vibeData.categories[key].rating }))
+    .sort((a, b) => b.rating - a.rating)
+    .slice(0, 3);
+
+  const W = 380, H = 676;
+
   return (
+    <div ref={cardRef} style={{
+      width: W, height: H,
+      backgroundColor: "#FAF7F2",
+      fontFamily: '"Outfit", system-ui, sans-serif',
+      position: "relative",
+      overflow: "hidden",
+      flexShrink: 0,
+    }}>
+      {/* dot grid */}
+      <div style={{
+        position: "absolute", inset: 0,
+        backgroundImage: "radial-gradient(circle at 1px 1px, rgba(27,58,107,0.07) 1px, transparent 0)",
+        backgroundSize: "22px 22px",
+        pointerEvents: "none",
+      }} />
+
+      {/* navy top band */}
+      <div style={{
+        background: "#1B3A6B",
+        padding: "15px 24px",
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+        position: "relative", zIndex: 1,
+      }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+          </svg>
+          <span style={{ color: "white", fontWeight: 700, letterSpacing: "0.2em", fontSize: 11, textTransform: "uppercase" }}>VryfID</span>
+        </div>
+        <span style={{ color: "rgba(255,255,255,0.42)", fontSize: 9, letterSpacing: "0.14em", textTransform: "uppercase" }}>
+          Agent-Matched Living
+        </span>
+      </div>
+
+      {/* score section */}
+      <div style={{ padding: "24px 24px 16px", textAlign: "center", position: "relative", zIndex: 1 }}>
+        {/* faint background ring */}
+        <div style={{
+          position: "absolute", top: "50%", left: "50%",
+          transform: "translate(-50%, -50%)",
+          width: 190, height: 190, borderRadius: "50%",
+          border: "1px solid rgba(27,58,107,0.07)",
+          pointerEvents: "none",
+        }} />
+        <p style={{ color: "rgba(27,58,107,0.38)", fontSize: 9, fontWeight: 700, letterSpacing: "0.22em", textTransform: "uppercase", marginBottom: 2 }}>
+          Neighborhood Vibes
+        </p>
+        <p style={{ fontFamily: '"DM Serif Display", Georgia, serif', fontSize: 120, color: "#1B3A6B", lineHeight: 1, margin: 0 }}>
+          {vibeData.vibeScore}
+        </p>
+        <p style={{ color: "rgba(27,58,107,0.38)", fontSize: 11, margin: "2px 0 6px" }}>/ 100</p>
+        <p style={{ color: tier.color, fontSize: 15, fontWeight: 600, margin: 0 }}>
+          {tier.label} {tier.emoji}
+        </p>
+      </div>
+
+      <div style={{ height: 1, background: "rgba(27,58,107,0.09)", margin: "0 24px" }} />
+
+      {/* property section */}
+      <div style={{ padding: "14px 24px", position: "relative", zIndex: 1 }}>
+        <p style={{ color: "rgba(27,58,107,0.38)", fontSize: 9, fontWeight: 700, letterSpacing: "0.22em", textTransform: "uppercase", marginBottom: 4 }}>
+          Your Match
+        </p>
+        <p style={{ fontFamily: '"DM Serif Display", Georgia, serif', fontSize: 23, color: "#1B3A6B", lineHeight: 1.15, marginBottom: 3 }}>
+          {listing.street}
+        </p>
+        <p style={{ color: "#64748B", fontSize: 12, marginBottom: 4 }}>{listing.neighborhood} · {listing.city}</p>
+        <div style={{ display: "flex", alignItems: "baseline", gap: 5 }}>
+          <span style={{ color: "#1B3A6B", fontWeight: 700, fontSize: 15 }}>{listing.price}</span>
+          <span style={{ color: "#94A3B8", fontSize: 13 }}>{listing.period}</span>
+          <span style={{ color: "#CBD5E1" }}>·</span>
+          <span style={{ color: "#64748B", fontSize: 12 }}>{listing.beds} bd · {listing.sqft} sf</span>
+        </div>
+      </div>
+
+      <div style={{ height: 1, background: "rgba(27,58,107,0.09)", margin: "0 24px" }} />
+
+      {/* top 3 vibes */}
+      <div style={{ padding: "14px 24px", position: "relative", zIndex: 1 }}>
+        <p style={{ color: "rgba(27,58,107,0.38)", fontSize: 9, fontWeight: 700, letterSpacing: "0.22em", textTransform: "uppercase", marginBottom: 9 }}>
+          Top Vibes
+        </p>
+        <div style={{ display: "flex", gap: 8 }}>
+          {top3.map((cat) => (
+            <div key={cat.key} style={{
+              flex: 1,
+              background: "white",
+              borderRadius: 10,
+              padding: "9px 10px",
+              border: "1px solid rgba(27,58,107,0.08)",
+            }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 3 }}>
+                <span style={{ fontSize: 11 }}>{cat.emoji}</span>
+                <span style={{ color: "#64748B", fontSize: 9, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em" }}>{cat.label}</span>
+              </div>
+              <p style={{ color: cat.accent, fontSize: 24, fontWeight: 700, lineHeight: 1, margin: 0, fontFamily: '"DM Serif Display", Georgia, serif' }}>
+                {cat.rating}
+              </p>
+              <div style={{ height: 3, background: "rgba(27,58,107,0.08)", borderRadius: 2, marginTop: 5 }}>
+                <div style={{ height: 3, background: cat.accent, borderRadius: 2, width: `${cat.rating}%` }} />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div style={{ height: 1, background: "rgba(27,58,107,0.09)", margin: "0 24px" }} />
+
+      {/* archetype + footer */}
+      <div style={{ padding: "13px 24px 18px", display: "flex", justifyContent: "space-between", alignItems: "center", position: "relative", zIndex: 1 }}>
+        <div>
+          <p style={{ color: "rgba(27,58,107,0.35)", fontSize: 9, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", marginBottom: 2 }}>
+            You Are
+          </p>
+          <p style={{ fontFamily: '"DM Serif Display", Georgia, serif', fontSize: 16, color: "#1B3A6B", fontStyle: "italic", margin: 0 }}>
+            {archetypeName}
+          </p>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#1B3A6B" strokeWidth="2" opacity="0.4">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+          </svg>
+          <span style={{ color: "rgba(27,58,107,0.4)", fontSize: 10, fontWeight: 600, letterSpacing: "0.1em" }}>vryfid.com</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ShareModal({ listing, archetypeName, onClose }) {
+  const cardRef = useRef(null);
+  const [generating, setGenerating] = useState(false);
+  const [done, setDone] = useState(false);
+
+  async function handleDownload() {
+    if (!cardRef.current) return;
+    setGenerating(true);
+    try {
+      const dataUrl = await toPng(cardRef.current, {
+        pixelRatio: 2,
+        backgroundColor: "#FAF7F2",
+        width: 380,
+        height: 676,
+      });
+      const link = document.createElement("a");
+      link.download = `vryfid-${listing.street.replace(/\s+/g, "-").toLowerCase()}.png`;
+      link.href = dataUrl;
+      link.click();
+      setDone(true);
+      setTimeout(() => setDone(false), 2500);
+    } finally {
+      setGenerating(false);
+    }
+  }
+
+  // Scale 380×676 → 285×507 for the modal preview (75%)
+  const SCALE = 0.75;
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-6"
+      style={{ background: "rgba(13,33,68,0.75)", backdropFilter: "blur(8px)" }}
+      onClick={(e) => e.target === e.currentTarget && onClose()}
+    >
+      <div className="bg-white rounded-3xl overflow-hidden shadow-2xl flex flex-col items-center gap-0 max-w-sm w-full">
+        {/* header */}
+        <div className="w-full flex items-center justify-between px-6 py-4 border-b border-[#F0EAE0]">
+          <p className="text-[#1B3A6B] font-semibold text-sm">Your Vibe Score Card</p>
+          <button onClick={onClose} className="w-7 h-7 rounded-full bg-[#FAF7F2] flex items-center justify-center text-slate-400 hover:text-[#1B3A6B] transition-colors">
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        {/* card preview — scaled */}
+        <div style={{
+          width: 380 * SCALE,
+          height: 676 * SCALE,
+          overflow: "hidden",
+          flexShrink: 0,
+        }}>
+          <div style={{ transform: `scale(${SCALE})`, transformOrigin: "top left", width: 380, height: 676 }}>
+            <ShareCard listing={listing} archetypeName={archetypeName} cardRef={cardRef} />
+          </div>
+        </div>
+
+        {/* actions */}
+        <div className="w-full px-6 py-4 border-t border-[#F0EAE0] flex gap-3">
+          <button onClick={onClose} className="flex-1 py-2.5 rounded-xl border border-[#E8E0D5] text-slate-500 text-sm font-medium hover:border-[#1B3A6B] hover:text-[#1B3A6B] transition-colors">
+            Close
+          </button>
+          <button
+            onClick={handleDownload}
+            disabled={generating}
+            className="flex-1 py-2.5 rounded-xl bg-[#1B3A6B] text-white text-sm font-semibold hover:bg-[#0D2144] disabled:opacity-60 transition-colors flex items-center justify-center gap-2"
+          >
+            {generating ? (
+              <><svg className="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>Generating…</>
+            ) : done ? (
+              <><svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>Saved!</>
+            ) : (
+              <><svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>Save as Image</>
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────
+   VIBE SCORE SECTION
+───────────────────────────────────────────── */
+function VibeScoreSection({ listing }) {
+  const { vibeData } = listing;
+  const tier = getVibeTier(vibeData.vibeScore);
+  const archetypeName = ARCHETYPES[getArchetypeKey(listing.area)]?.name ?? "The Elevated";
+  const [showShare, setShowShare] = useState(false);
+
+  return (
+    <>
+    {showShare && (
+      <ShareModal listing={listing} archetypeName={archetypeName} onClose={() => setShowShare(false)} />
+    )}
     <div className="bg-white rounded-2xl border border-[#E8E0D5] shadow-sm overflow-hidden">
       {/* Header band */}
       <div className="px-7 pt-6 pb-5 border-b border-[#F5F0E8]">
@@ -101,7 +340,18 @@ function VibeScoreSection({ listing }) {
           <p className="text-[#1B3A6B] text-[10px] font-semibold uppercase tracking-[0.22em]">
             Neighborhood Vibes
           </p>
-          <span className="text-[10px] text-slate-300 font-medium">Powered by VryfID Vibes</span>
+          <div className="flex items-center gap-3">
+            <span className="text-[10px] text-slate-300 font-medium">Powered by VryfID Vibes</span>
+            <button
+              onClick={() => setShowShare(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-[#E8E0D5] text-[#1B3A6B] text-[11px] font-semibold hover:bg-[#1B3A6B] hover:text-white hover:border-[#1B3A6B] transition-all duration-200"
+            >
+              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+              </svg>
+              Share
+            </button>
+          </div>
         </div>
 
         <div className="flex items-center gap-5 mt-4">
@@ -189,6 +439,7 @@ function VibeScoreSection({ listing }) {
         <span>{vibeData.nearestAirport.driveTime}</span>
       </div>
     </div>
+    </>
   );
 }
 
