@@ -431,7 +431,7 @@ function ListingSection({ ranked, message, onMessageChange, onSend, onStartOver,
       <div className="max-w-5xl mx-auto px-6 py-10">
         {/* map */}
         <div className="mb-6">
-          <MapView lat={match.lat} lng={match.lng} />
+          <MapView listing={match} />
         </div>
 
         {/* details + message */}
