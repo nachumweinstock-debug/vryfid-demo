@@ -1,4 +1,4 @@
-@import "leaflet/dist/leaflet.css";
+@import "maplibre-gl/dist/maplibre-gl.css";
 
 @tailwind base;
 @tailwind components;
@@ -10,62 +10,62 @@ body {
   font-family: "Outfit", system-ui, sans-serif;
 }
 
-* {
-  box-sizing: border-box;
-}
+* { box-sizing: border-box; }
 
 @layer base {
-  ::selection {
-    background-color: #bfdbfe;
-    color: #1b3a6b;
-  }
+  ::selection { background-color: #bfdbfe; color: #1b3a6b; }
 }
 
 /* ─────────────────────────────────────────────
-   MAP  —  subtle crisp filter
-   Voyager tiles have rich colour already.
-   Just a light contrast pop — water stays blue.
+   MAPLIBRE  —  branded controls
 ───────────────────────────────────────────── */
-.vryfid-map .leaflet-tile-pane {
-  filter: contrast(1.08) brightness(1.01) saturate(1.06);
+
+/* Attribution */
+.maplibregl-ctrl-attrib {
+  font-size: 9px !important;
+  opacity: 0.4 !important;
+  background: rgba(255, 255, 255, 0.55) !important;
+  backdrop-filter: blur(4px) !important;
 }
 
-/* Hide leaflet's default attribution badge (we keep our own) */
-.vryfid-map .leaflet-control-attribution {
-  font-size: 9px;
-  opacity: 0.45;
-  background: rgba(255, 255, 255, 0.6) !important;
-  backdrop-filter: blur(4px);
-}
-
-/* Zoom controls — style to match brand */
-.vryfid-map .leaflet-control-zoom {
+/* Zoom / compass group */
+.maplibregl-ctrl-group {
+  background: rgba(255, 255, 255, 0.9) !important;
+  backdrop-filter: blur(14px) !important;
+  -webkit-backdrop-filter: blur(14px) !important;
+  border-radius: 14px !important;
   border: none !important;
-  box-shadow: 0 4px 16px rgba(27, 58, 107, 0.15) !important;
-  border-radius: 12px !important;
+  box-shadow: 0 4px 20px rgba(27, 58, 107, 0.18) !important;
   overflow: hidden;
 }
-.vryfid-map .leaflet-control-zoom a {
-  background: rgba(255, 255, 255, 0.92) !important;
-  backdrop-filter: blur(12px) !important;
-  color: #1b3a6b !important;
+.maplibregl-ctrl-group button {
+  width: 38px !important;
+  height: 38px !important;
   border: none !important;
-  width: 36px !important;
-  height: 36px !important;
-  line-height: 36px !important;
-  font-size: 18px !important;
-  font-weight: 300 !important;
+  border-bottom: 1px solid rgba(27, 58, 107, 0.06) !important;
+  background: transparent !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
 }
-.vryfid-map .leaflet-control-zoom a:hover {
-  background: rgba(27, 58, 107, 0.08) !important;
+.maplibregl-ctrl-group button:last-child {
+  border-bottom: none !important;
 }
-.vryfid-map .leaflet-control-zoom-in {
-  border-bottom: 1px solid rgba(27, 58, 107, 0.08) !important;
+.maplibregl-ctrl-group button:hover {
+  background: rgba(27, 58, 107, 0.06) !important;
+}
+.maplibregl-ctrl-icon {
+  filter: invert(18%) sepia(60%) saturate(700%) hue-rotate(195deg);
+  opacity: 0.8;
+}
+
+/* Pitch/compass button */
+.maplibregl-ctrl-compass .maplibregl-ctrl-icon {
+  filter: invert(18%) sepia(60%) saturate(700%) hue-rotate(195deg);
 }
 
 /* ─────────────────────────────────────────────
    PIN  —  bounce drop animation
-   Spring physics: drops from above, slight overshoot, settle
 ───────────────────────────────────────────── */
 .vryfid-pin {
   animation: pinDrop 0.72s cubic-bezier(0.34, 1.56, 0.64, 1) both;
@@ -73,50 +73,28 @@ body {
 }
 
 @keyframes pinDrop {
-  0% {
-    transform: translateY(-44px) scale(0.55);
-    opacity: 0;
-  }
-  55% {
-    transform: translateY(5px) scale(1.08);
-    opacity: 1;
-  }
-  75% {
-    transform: translateY(-3px) scale(0.97);
-  }
-  90% {
-    transform: translateY(1px) scale(1.01);
-  }
-  100% {
-    transform: translateY(0) scale(1);
-    opacity: 1;
-  }
+  0%   { transform: translateY(-44px) scale(0.55); opacity: 0; }
+  55%  { transform: translateY(5px) scale(1.08);   opacity: 1; }
+  75%  { transform: translateY(-3px) scale(0.97); }
+  90%  { transform: translateY(1px) scale(1.01); }
+  100% { transform: translateY(0) scale(1);        opacity: 1; }
 }
 
 /* ─────────────────────────────────────────────
    FLOATING CARD  —  slide-up reveal
-   Delayed 0.6s so the pin drops first
 ───────────────────────────────────────────── */
 .vryfid-card-up {
-  animation: cardSlideUp 0.55s 0.62s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: cardSlideUp 0.55s 0.65s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 @keyframes cardSlideUp {
-  from {
-    transform: translateY(22px);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
+  from { transform: translateY(22px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
 }
 
 /* ─────────────────────────────────────────────
-   GLOBAL
+   MISC
 ───────────────────────────────────────────── */
 @layer utilities {
-  .scrollbar-hide::-webkit-scrollbar {
-    display: none;
-  }
+  .scrollbar-hide::-webkit-scrollbar { display: none; }
 }

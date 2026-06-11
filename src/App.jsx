@@ -842,38 +842,71 @@ function ListingSection({ ranked, message, onMessageChange, onSend, onStartOver,
 
         {/* map */}
         <div className="mb-6">
-          <MapView listing={viewing} />
+          <MapView listing={viewing} isPrimary={isPrimary} />
         </div>
 
         {/* listing details + message */}
         <div className="grid md:grid-cols-5 gap-5 mb-5">
-          {/* listing card */}
-          <div className="md:col-span-3 bg-white rounded-2xl p-7 border border-[#E8E0D5] shadow-sm">
-            <div className="flex items-start justify-between mb-5">
-              <div>
-                <p className="text-[#1B3A6B] text-[11px] font-semibold uppercase tracking-widest mb-1">{viewing.unit}</p>
-                <div className="flex items-baseline gap-1.5">
-                  <span className="font-serif text-[#1B3A6B] text-3xl">{viewing.price}</span>
-                  <span className="text-slate-400 text-sm">{viewing.period}</span>
-                </div>
-              </div>
-              <div className="flex flex-col items-end gap-1.5 flex-shrink-0 ml-4">
+          {/* listing card — luxury brochure layout */}
+          <div className="md:col-span-3 bg-white rounded-2xl overflow-hidden border border-[#E8E0D5] shadow-sm">
+            {/* dark header band */}
+            <div className="bg-[#1B3A6B] px-7 py-5">
+              <p className="text-white/45 text-[10px] font-semibold uppercase tracking-[0.22em] mb-1">
+                {viewing.neighborhood} · {viewing.unit}
+              </p>
+              <h3 className="font-serif text-white text-2xl leading-tight mb-3">
+                {viewing.street}
+              </h3>
+              <div className="flex flex-wrap gap-1.5">
                 {viewing.tags.map((t) => (
-                  <span key={t} className="px-2.5 py-1 rounded-full text-xs font-medium bg-[#DBEAFE] text-[#1B3A6B] whitespace-nowrap">{t}</span>
+                  <span key={t} className="px-2.5 py-1 rounded-full text-[11px] font-medium bg-white/10 text-white/80 border border-white/15">
+                    {t}
+                  </span>
                 ))}
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-3 mb-6">
-              {[["Beds", viewing.beds], ["Baths", viewing.baths], ["Sq Ft", viewing.sqft]].map(([label, val]) => (
-                <div key={label} className="bg-[#FAF7F2] rounded-xl p-3 text-center">
-                  <p className="text-[#1B3A6B] font-semibold text-xl leading-none mb-1">{val}</p>
-                  <p className="text-slate-400 text-[11px] uppercase tracking-wide">{label}</p>
-                </div>
-              ))}
+            <div className="px-7 pt-6 pb-2">
+              {/* hero price */}
+              <div className="flex items-baseline gap-2 mb-5">
+                <span className="font-serif text-[#1B3A6B]" style={{ fontSize: "3rem", lineHeight: 1 }}>
+                  {viewing.price}
+                </span>
+                <span className="text-slate-400 text-base">{viewing.period}</span>
+              </div>
+
+              {/* stats row */}
+              <div className="flex items-center gap-2 mb-6 text-sm font-semibold text-[#1B3A6B]">
+                <span>{viewing.beds} bd</span>
+                <span className="text-[#E8E0D5]">·</span>
+                <span>{viewing.baths} ba</span>
+                <span className="text-[#E8E0D5]">·</span>
+                <span>{viewing.sqft} sf</span>
+                <span className="text-[#E8E0D5]">·</span>
+                <span className="text-slate-400 font-normal">{viewing.city}</span>
+              </div>
+
+              <p className="text-slate-500 text-sm leading-relaxed pb-6 border-b border-[#F5F0E8]">
+                {viewing.description}
+              </p>
             </div>
 
-            <p className="text-slate-600 text-sm leading-relaxed">{viewing.description}</p>
+            {/* vibe score teaser strip */}
+            <div className="px-7 py-4 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div
+                  className="w-8 h-8 rounded-full flex items-center justify-center font-serif font-bold text-sm text-white"
+                  style={{ background: getVibeTier(viewing.vibeData.vibeScore).color }}
+                >
+                  {viewing.vibeData.vibeScore}
+                </div>
+                <span className="text-[#1B3A6B] font-semibold text-sm">
+                  {getVibeTier(viewing.vibeData.vibeScore).label}
+                </span>
+                <span className="text-slate-300 text-xs">Neighborhood Score</span>
+              </div>
+              <span className="text-slate-300 text-xs">↓ Full breakdown below</span>
+            </div>
           </div>
 
           {/* message card */}
