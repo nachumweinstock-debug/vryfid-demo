@@ -748,87 +748,67 @@ function ArchetypeCard({ archetypeKey, archetype, match, onScrollDown }) {
 /* ─────────────────────────────────────────────
    VRYFID FOOTER  —  matches VryfID Vibes brand
 ───────────────────────────────────────────── */
+const FOUNDERS = [
+  {
+    name: "Gabe Einhorn",
+    title: "Co-Founder, VryfID",
+    img: "/gabe.jpeg",
+    linkedin: "https://www.linkedin.com/in/gabe-einhorn-55b74822b/",
+    instagram: "https://www.instagram.com/gabe_einhorn/",
+  },
+  {
+    name: "Aiden Einhorn",
+    title: "Co-Founder, VryfID",
+    img: "/aiden.jpeg",
+    linkedin: "https://www.linkedin.com/in/aiden-einhorn-370095292/",
+    instagram: null,
+  },
+];
+
 function VryfIDFooter() {
   return (
     <footer style={{ background: "linear-gradient(180deg, #0C3C38 0%, #0A2E2B 100%)" }}>
       <div className="max-w-5xl mx-auto px-6 pt-14 pb-8">
-        {/* top row: logo + tagline + social */}
-        <div className="flex flex-col md:flex-row md:items-start justify-between gap-10 pb-10 border-b border-white/10">
-          <div className="max-w-xs">
+
+        {/* ── Main columns ── */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-10 pb-10 border-b border-white/10">
+
+          {/* Brand */}
+          <div className="md:col-span-1">
             <img src="/vryfid-logo.jpeg" alt="VryfID" className="h-10 w-auto rounded-lg mb-4" />
-            <p className="text-[#8FA29F] text-sm leading-relaxed">
+            <p className="text-[#8FA29F] text-sm leading-relaxed mb-5">
               Your verified digital profile, simplified. Protecting every party in trust-dependent transactions.
             </p>
-            <div className="flex gap-4 mt-5">
-              <a
-                href="https://www.linkedin.com/company/vryfidllc/"
-                target="_blank"
-                rel="noreferrer"
-                className="flex items-center gap-1.5 text-[#5EEAD4] hover:text-white text-sm font-medium transition-colors"
-              >
-                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-2-2 2 2 0 00-2 2v7h-4v-7a6 6 0 016-6zM2 9h4v12H2z" />
-                  <circle cx="4" cy="4" r="2" />
+            <div className="flex gap-4">
+              <a href="https://www.linkedin.com/company/vryfidllc/" target="_blank" rel="noreferrer"
+                className="text-[#5EEAD4] hover:text-white transition-colors">
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
                 </svg>
-                LinkedIn
               </a>
-              <a
-                href="https://www.instagram.com/gabe_einhorn/"
-                target="_blank"
-                rel="noreferrer"
-                className="flex items-center gap-1.5 text-[#5EEAD4] hover:text-white text-sm font-medium transition-colors"
-              >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-                  <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
-                  <circle cx="12" cy="12" r="4" />
-                  <circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none" />
+              <a href="https://www.instagram.com/gabe_einhorn/" target="_blank" rel="noreferrer"
+                className="text-[#5EEAD4] hover:text-white transition-colors">
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/>
                 </svg>
-                Instagram
               </a>
             </div>
           </div>
 
-          {/* link columns */}
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-8">
+          {/* Links */}
+          <div className="md:col-span-2 grid grid-cols-2 sm:grid-cols-3 gap-8">
             {[
-              {
-                heading: "Product",
-                links: [
-                  ["Agent-Matched Living", "#"],
-                  ["Neighborhood Vibes", "https://VryfIDVibes.com"],
-                  ["Vibe Score", "https://VryfIDVibes.com"],
-                  ["Share Card", "#"],
-                ],
-              },
-              {
-                heading: "Company",
-                links: [
-                  ["About VryfID", "#"],
-                  ["How It Works", "#"],
-                  ["For Landlords", "#"],
-                  ["Partnerships", "#"],
-                ],
-              },
-              {
-                heading: "Legal",
-                links: [
-                  ["Privacy Policy", "#"],
-                  ["Terms of Service", "#"],
-                  ["Disclaimer", "#"],
-                ],
-              },
+              { heading: "Verticals", links: [["Real Estate","https://vryfidinsights.com/real-estate/"],["Insurance","https://vryfidinsights.com/insurance/"],["Lending","https://vryfidinsights.com/lending/"],["Brokerage","https://vryfidinsights.com/brokerage/"],["Gig Economy","https://vryfidinsights.com/gig-economy/"]] },
+              { heading: "VryfID", links: [["Main Site","https://www.vryfid.com/"],["Verify a Tenant","https://www.vryfid.com/"],["Verify a Landlord","https://www.vryfid.com/"],["For Managers","https://www.vryfid.com/"]] },
+              { heading: "Vibes", links: [["Neighborhood Vibes","https://VryfIDVibes.com"],["Vibe Score","https://VryfIDVibes.com"],["Share Card","https://VryfIDVibes.com"]] },
             ].map(({ heading, links }) => (
               <div key={heading}>
-                <p className="text-white font-semibold text-sm mb-3">{heading}</p>
+                <p className="text-white font-semibold text-xs uppercase tracking-widest mb-3">{heading}</p>
                 <ul className="space-y-2">
                   {links.map(([label, href]) => (
                     <li key={label}>
-                      <a
-                        href={href}
-                        target={href.startsWith("http") ? "_blank" : undefined}
-                        rel="noreferrer"
-                        className="text-[#8FA29F] hover:text-[#CFFAF4] text-sm transition-colors"
-                      >
+                      <a href={href} target="_blank" rel="noreferrer"
+                        className="text-[#8FA29F] hover:text-[#CFFAF4] text-sm transition-colors">
                         {label}
                       </a>
                     </li>
@@ -837,23 +817,52 @@ function VryfIDFooter() {
               </div>
             ))}
           </div>
+
+          {/* Founders */}
+          <div className="md:col-span-1">
+            <p className="text-white font-semibold text-xs uppercase tracking-widest mb-4">Meet the Founders</p>
+            <p className="text-[#8FA29F] text-xs mb-5 leading-relaxed">
+              Brothers on a mission to make identity verification simple, secure, and universal.
+            </p>
+            <div className="flex flex-col gap-5">
+              {FOUNDERS.map((f) => (
+                <div key={f.name} className="flex items-center gap-3">
+                  <img
+                    src={f.img}
+                    alt={f.name}
+                    className="w-12 h-12 rounded-full object-cover flex-shrink-0 border-2 border-white/10"
+                  />
+                  <div>
+                    <p className="text-white text-sm font-semibold leading-tight">{f.name}</p>
+                    <p className="text-[#6B7F7C] text-xs mb-1.5">{f.title}</p>
+                    <div className="flex gap-3">
+                      <a href={f.linkedin} target="_blank" rel="noreferrer"
+                        className="text-[#5EEAD4] hover:text-white text-xs transition-colors">
+                        LinkedIn ↗
+                      </a>
+                      {f.instagram && (
+                        <a href={f.instagram} target="_blank" rel="noreferrer"
+                          className="text-[#5EEAD4] hover:text-white text-xs transition-colors">
+                          Instagram ↗
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
 
-        {/* bottom bar */}
-        <div className="pt-6 flex flex-col md:flex-row items-center justify-between gap-3">
-          <p className="text-[#6B7F7C] text-xs">
-            © 2026 VryfID LLC. All rights reserved.
-          </p>
+        {/* ── Bottom bar ── */}
+        <div className="pt-6 flex flex-col sm:flex-row items-center justify-between gap-3">
+          <p className="text-[#6B7F7C] text-xs">© 2026 VryfID LLC. All rights reserved.</p>
           <div className="flex items-center gap-4">
             <span className="text-[#6B7F7C] text-xs">
-              Product concept demo — listings &amp; pricing are illustrative.
+              Product concept demo — listings &amp; pricing illustrative.
             </span>
-            <a
-              href="https://VryfIDVibes.com"
-              target="_blank"
-              rel="noreferrer"
-              className="text-[#5EEAD4] text-xs font-medium hover:text-white transition-colors"
-            >
+            <a href="https://VryfIDVibes.com" target="_blank" rel="noreferrer"
+              className="text-[#5EEAD4] text-xs font-medium hover:text-white transition-colors">
               VryfIDVibes.com →
             </a>
           </div>

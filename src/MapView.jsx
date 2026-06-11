@@ -1,87 +1,143 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useCallback } from "react";
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 
 /* ─────────────────────────────────────────────
-   MARKER CREATORS
+   BUILDING COLOR — navy gradient by height
 ───────────────────────────────────────────── */
+const BLDG_COLOR = [
+  "interpolate", ["linear"],
+  ["coalesce", ["get", "render_height"], ["get", "height"], 8],
+  0,    "#CBD9EE",
+  20,   "#A8C0E0",
+  60,   "#6699CC",
+  130,  "#3D6BC4",
+  240,  "#2A5298",
+  380,  "#1B3A6B",
+  650,  "#0D2144",
+];
 
-/** Large Wolt-style teardrop — used for the currently-viewed listing */
-function createWoltPin(listingId) {
+/* ─────────────────────────────────────────────
+   MARKER ELEMENTS
+───────────────────────────────────────────── */
+function createWoltPin(id) {
   const el = document.createElement("div");
   el.className = "vryfid-pin";
-  // tip sits exactly at bottom-center of the 58×74 bounding box
-  el.style.cssText = "width:58px;height:74px;cursor:pointer;";
-  const fid = `mpf${listingId}`;
-  el.innerHTML = `
-    <svg viewBox="0 0 58 74" width="58" height="74"
-         xmlns="http://www.w3.org/2000/svg" overflow="visible">
-      <defs>
-        <filter id="${fid}" x="-60%" y="-20%" width="220%" height="160%">
-          <feDropShadow dx="0" dy="6" stdDeviation="8"
-            flood-color="#0D2144" flood-opacity="0.5"/>
-        </filter>
-      </defs>
-      <!-- body: tip ends at (29,74) — exactly the anchor point -->
-      <path d="M29 3
-               C14.64 3 3 14.64 3 29
-               C3 45 29 74 29 74
-               C29 74 55 45 55 29
-               C55 14.64 43.36 3 29 3 Z"
-            fill="#1B3A6B" filter="url(#${fid})"/>
-      <!-- white inner circle -->
-      <circle cx="29" cy="29" r="13" fill="white"/>
-      <!-- subtle navy centre dot -->
-      <circle cx="29" cy="29" r="4.5" fill="#1B3A6B" opacity="0.22"/>
-    </svg>`;
+  el.style.cssText = "width:54px;height:70px;cursor:pointer;";
+  const fid = `wf${id}`;
+  el.innerHTML = `<svg viewBox="0 0 54 70" width="54" height="70"
+      xmlns="http://www.w3.org/2000/svg" overflow="visible">
+    <defs>
+      <filter id="${fid}" x="-60%" y="-20%" width="220%" height="160%">
+        <feDropShadow dx="0" dy="6" stdDeviation="7"
+          flood-color="#0D2144" flood-opacity="0.5"/>
+      </filter>
+    </defs>
+    <path d="M27 2C13.75 2 3 12.75 3 26C3 43 27 68 27 68C27 68 51 43 51 26C51 12.75 40.25 2 27 2Z"
+          fill="#1B3A6B" filter="url(#${fid})"/>
+    <circle cx="27" cy="26" r="12" fill="white"/>
+    <circle cx="27" cy="26" r="4.5" fill="#1B3A6B" opacity="0.2"/>
+  </svg>`;
   return el;
 }
 
-/** Small numbered circle — for the #2 / #3 ranked listings */
-function createNumberPin(rank, listingId) {
+function createNumberBadge(rank, id) {
   const el = document.createElement("div");
   el.className = "vryfid-num-pin";
-  el.dataset.rank = rank;
-  const fid = `nf${listingId}`;
-  el.style.cssText = "width:36px;height:46px;cursor:pointer;";
-  // tear drop but smaller with a rank number inside
-  el.innerHTML = `
-    <svg viewBox="0 0 36 46" width="36" height="46"
-         xmlns="http://www.w3.org/2000/svg" overflow="visible">
-      <defs>
-        <filter id="${fid}" x="-60%" y="-20%" width="220%" height="160%">
-          <feDropShadow dx="0" dy="4" stdDeviation="5"
-            flood-color="#0D2144" flood-opacity="0.4"/>
-        </filter>
-      </defs>
-      <path d="M18 2
-               C9.16 2 2 9.16 2 18
-               C2 29 18 44 18 44
-               C18 44 34 29 34 18
-               C34 9.16 26.84 2 18 2 Z"
-            fill="white" stroke="#1B3A6B" stroke-width="2.5"
-            filter="url(#${fid})"/>
-      <text x="18" y="23" text-anchor="middle"
-            font-family="Outfit,system-ui,sans-serif"
-            font-size="14" font-weight="700"
-            fill="#1B3A6B">#${rank}</text>
-    </svg>`;
+  el.style.cssText = "width:34px;height:34px;cursor:pointer;";
+  const fid = `nf${id}`;
+  el.innerHTML = `<svg viewBox="0 0 34 34" width="34" height="34"
+      xmlns="http://www.w3.org/2000/svg" overflow="visible">
+    <defs>
+      <filter id="${fid}" x="-60%" y="-40%" width="220%" height="220%">
+        <feDropShadow dx="0" dy="3" stdDeviation="4"
+          flood-color="#0D2144" flood-opacity="0.4"/>
+      </filter>
+    </defs>
+    <circle cx="17" cy="17" r="15" fill="white"
+      stroke="#1B3A6B" stroke-width="2.5" filter="url(#${fid})"/>
+    <text x="17" y="22" text-anchor="middle"
+      font-family="Outfit,system-ui,sans-serif"
+      font-weight="700" font-size="14" fill="#1B3A6B">${rank}</text>
+  </svg>`;
   return el;
 }
 
 /* ─────────────────────────────────────────────
-   FLY HELPERS
+   FLY TO
 ───────────────────────────────────────────── */
-const NYC_CAMERA = { pitch: 45, bearing: 0, zoom: 15.5 };
-
-function flyTo(map, listing) {
+function flyTo(map, lng, lat) {
   map.flyTo({
-    center: [listing.lng, listing.lat],
-    ...NYC_CAMERA,
-    duration: 2200,
+    center: [lng, lat],
+    zoom: 15.5,
+    pitch: 45,
+    bearing: 0,
+    duration: 2000,
     essential: true,
     curve: 1.2,
-    easing: (t) => 1 - Math.pow(1 - t, 3),
+  });
+}
+
+/* ─────────────────────────────────────────────
+   APPLY 3D BUILDING STYLES
+   The liberty style already has fill-extrusion
+   building layers — we restyle them rather than
+   adding our own, to avoid layer conflicts.
+───────────────────────────────────────────── */
+function applyBuildingStyles(map) {
+  const layers = map.getStyle().layers;
+
+  // Restyle existing building extrusion layers
+  let found = false;
+  layers.forEach((l) => {
+    if (l.type === "fill-extrusion" && l["source-layer"] === "building") {
+      found = true;
+      try {
+        map.setPaintProperty(l.id, "fill-extrusion-color", BLDG_COLOR);
+        map.setPaintProperty(l.id, "fill-extrusion-opacity", 0.88);
+      } catch {}
+    }
+  });
+
+  // If no existing 3D layer found, add our own
+  if (!found) {
+    const sources = map.getStyle().sources;
+    const srcId =
+      "openmaptiles" in sources
+        ? "openmaptiles"
+        : Object.keys(sources).find((k) => sources[k].type === "vector");
+
+    if (srcId) {
+      const beforeId = layers.find((l) => l.type === "symbol")?.id;
+      try {
+        map.addLayer(
+          {
+            id: "vryfid-bldg",
+            type: "fill-extrusion",
+            source: srcId,
+            "source-layer": "building",
+            paint: {
+              "fill-extrusion-color": BLDG_COLOR,
+              "fill-extrusion-height": [
+                "coalesce", ["get", "render_height"], ["get", "height"], 8,
+              ],
+              "fill-extrusion-base": [
+                "coalesce", ["get", "render_min_height"], 0,
+              ],
+              "fill-extrusion-opacity": 0.88,
+            },
+          },
+          beforeId
+        );
+      } catch {}
+    }
+  }
+
+  // Tint water sky-blue
+  layers.forEach((l) => {
+    if (l["source-layer"] === "water" && l.type === "fill") {
+      try { map.setPaintProperty(l.id, "fill-color", "#BFDBFE"); } catch {}
+    }
   });
 }
 
@@ -90,50 +146,57 @@ function flyTo(map, listing) {
 ───────────────────────────────────────────── */
 export default function MapView({ listing, ranked = [], isPrimary = true, onSelect }) {
   const containerRef = useRef(null);
-  const mapRef = useRef(null);
-  const markersRef = useRef([]); // all active markers
-  const listingRef = useRef(listing);
-  listingRef.current = listing;
+  const mapRef      = useRef(null);
+  const markersRef  = useRef([]);
 
-  /* ── Build / refresh all markers ── */
-  function refreshMarkers(map, viewingId) {
+  // Keep refs up-to-date on every render so callbacks are never stale
+  const listingRef  = useRef(listing);  listingRef.current  = listing;
+  const rankedRef   = useRef(ranked);   rankedRef.current   = ranked;
+  const onSelectRef = useRef(onSelect); onSelectRef.current = onSelect;
+
+  /* ── Marker refresh — always reads from refs ── */
+  const refreshMarkers = useCallback((map, viewingId) => {
     markersRef.current.forEach((m) => m.remove());
     markersRef.current = [];
 
-    const targets = ranked.length > 0 ? ranked.slice(0, 3) : [listing];
+    const list = rankedRef.current.length > 0
+      ? rankedRef.current.slice(0, 3)
+      : [listingRef.current];
 
-    targets.forEach((l, i) => {
+    list.forEach((l, i) => {
       const isViewing = l.id === viewingId;
-      const el = isViewing ? createWoltPin(l.id) : createNumberPin(i + 1, l.id);
+      const el = isViewing ? createWoltPin(l.id) : createNumberBadge(i + 1, l.id);
 
-      if (!isViewing && onSelect) {
+      if (!isViewing) {
         el.addEventListener("click", (e) => {
           e.stopPropagation();
-          onSelect(l);
+          onSelectRef.current?.(l);
         });
       }
 
       const marker = new maplibregl.Marker({
         element: el,
-        anchor: "bottom", // pin tip / circle bottom at the lng/lat
-        offset: [0, 0],
+        anchor: isViewing ? "bottom" : "center",
       })
         .setLngLat([l.lng, l.lat])
         .addTo(map);
 
       markersRef.current.push(marker);
     });
-  }
+  }, []); // stable — only uses refs
 
-  /* ── Initialize once ── */
+  /* ── Init once ── */
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
 
     const map = new maplibregl.Map({
       container: containerRef.current,
-      style: "https://tiles.openfreemap.org/styles/positron",
+      // liberty is OpenFreeMap's full-featured style — includes building data
+      style: "https://tiles.openfreemap.org/styles/liberty",
       center: [listingRef.current.lng, listingRef.current.lat],
-      ...NYC_CAMERA,
+      zoom: 15.5,
+      pitch: 45,
+      bearing: 0,
       antialias: true,
       attributionControl: false,
     });
@@ -149,59 +212,7 @@ export default function MapView({ listing, ranked = [], isPrimary = true, onSele
     );
 
     map.on("load", () => {
-      const style = map.getStyle();
-
-      /* tint water to match brand sky-blue */
-      style.layers.forEach((l) => {
-        if (l["source-layer"] === "water" && l.type === "fill") {
-          try { map.setPaintProperty(l.id, "fill-color", "#BFDBFE"); } catch {}
-        }
-      });
-
-      /* hide flat 2D building fills */
-      style.layers.forEach((l) => {
-        if (l["source-layer"] === "building" && l.type === "fill") {
-          try { map.setLayoutProperty(l.id, "visibility", "none"); } catch {}
-        }
-      });
-
-      /* find the vector source */
-      const srcId = Object.keys(style.sources).find(
-        (id) => style.sources[id].type === "vector"
-      );
-
-      if (srcId) {
-        map.addLayer(
-          {
-            id: "vryfid-buildings-3d",
-            type: "fill-extrusion",
-            source: srcId,
-            "source-layer": "building",
-            paint: {
-              "fill-extrusion-color": [
-                "interpolate", ["linear"],
-                ["coalesce", ["get", "render_height"], ["get", "height"], 8],
-                0,   "#D4E5F7",
-                25,  "#A8C8E8",
-                60,  "#6699CC",
-                120, "#3D6BC4",
-                220, "#2A5298",
-                350, "#1B3A6B",
-                600, "#0D2144",
-              ],
-              "fill-extrusion-height": [
-                "coalesce", ["get", "render_height"], ["get", "height"], 8,
-              ],
-              "fill-extrusion-base": [
-                "coalesce", ["get", "render_min_height"], 0,
-              ],
-              "fill-extrusion-opacity": 0.88,
-            },
-          },
-          style.layers.find((l) => l.type === "symbol")?.id
-        );
-      }
-
+      applyBuildingStyles(map);
       refreshMarkers(map, listingRef.current.id);
     });
 
@@ -211,19 +222,21 @@ export default function MapView({ listing, ranked = [], isPrimary = true, onSele
       map.remove();
       mapRef.current = null;
     };
-  }, []); // eslint-disable-line
+  }, [refreshMarkers]);
 
-  /* ── Swap markers + fly when viewed listing changes ── */
+  /* ── On listing change: fly + refresh markers ── */
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
-    const swap = () => {
-      flyTo(map, listing);
+
+    const go = () => {
+      flyTo(map, listing.lng, listing.lat);
       refreshMarkers(map, listing.id);
     };
-    if (map.loaded()) swap();
-    else map.once("load", swap);
-  }, [listing.id]); // eslint-disable-line
+
+    if (map.loaded()) go();
+    else map.once("load", go);
+  }, [listing.id, refreshMarkers]);
 
   const { street, neighborhood, price, period } = listing;
 
@@ -238,16 +251,16 @@ export default function MapView({ listing, ranked = [], isPrimary = true, onSele
     >
       <div ref={containerRef} className="vryfid-map" style={{ width: "100%", height: "100%" }} />
 
-      {/* cinematic vignette */}
+      {/* vignette */}
       <div className="absolute inset-0 pointer-events-none" style={{
-        background: "radial-gradient(ellipse 115% 115% at 50% 38%, transparent 48%, rgba(13,33,68,0.12) 100%)",
+        background: "radial-gradient(ellipse 115% 115% at 50% 40%, transparent 50%, rgba(13,33,68,0.1) 100%)",
         zIndex: 2,
       }} />
 
-      {/* bottom fade behind card */}
+      {/* bottom fade */}
       <div className="absolute bottom-0 left-0 right-0 pointer-events-none" style={{
-        height: 160,
-        background: "linear-gradient(to top, rgba(255,255,255,0.75) 0%, transparent 100%)",
+        height: 150,
+        background: "linear-gradient(to top, rgba(255,255,255,0.78) 0%, transparent 100%)",
         zIndex: 3,
       }} />
 
@@ -275,7 +288,7 @@ export default function MapView({ listing, ranked = [], isPrimary = true, onSele
             <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
             </svg>
-            {isPrimary ? "#1 Match" : "Also Consider"}
+            {isPrimary ? "#1 Match" : "Viewing"}
           </span>
         </div>
       </div>
