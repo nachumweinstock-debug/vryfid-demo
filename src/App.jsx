@@ -491,13 +491,13 @@ const ARCHETYPE_ICONS = {
 ───────────────────────────────────────────── */
 function Logo({ light = false }) {
   return (
-    <div className="flex items-center gap-2.5">
-      <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${light ? "bg-white/10 border border-white/20" : "bg-[#1B3A6B]/10 border border-[#1B3A6B]/15"}`}>
-        <svg className={`w-4 h-4 ${light ? "text-white" : "text-[#1B3A6B]"}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-        </svg>
-      </div>
-      <span className={`font-semibold tracking-widest text-xs uppercase ${light ? "text-white" : "text-[#1B3A6B]"}`}>VryfID</span>
+    <div className="flex items-center gap-2">
+      <img
+        src="/vryfid-logo.jpeg"
+        alt="VryfID"
+        className="rounded-md"
+        style={{ height: 30, width: "auto", opacity: light ? 1 : 1 }}
+      />
     </div>
   );
 }
@@ -745,6 +745,124 @@ function ArchetypeCard({ archetypeKey, archetype, match, onScrollDown }) {
 /* ─────────────────────────────────────────────
    ALSO CONSIDER  (clickable)
 ───────────────────────────────────────────── */
+/* ─────────────────────────────────────────────
+   VRYFID FOOTER  —  matches VryfID Vibes brand
+───────────────────────────────────────────── */
+function VryfIDFooter() {
+  return (
+    <footer style={{ background: "linear-gradient(180deg, #0C3C38 0%, #0A2E2B 100%)" }}>
+      <div className="max-w-5xl mx-auto px-6 pt-14 pb-8">
+        {/* top row: logo + tagline + social */}
+        <div className="flex flex-col md:flex-row md:items-start justify-between gap-10 pb-10 border-b border-white/10">
+          <div className="max-w-xs">
+            <img src="/vryfid-logo.jpeg" alt="VryfID" className="h-10 w-auto rounded-lg mb-4" />
+            <p className="text-[#8FA29F] text-sm leading-relaxed">
+              Your verified digital profile, simplified. Protecting every party in trust-dependent transactions.
+            </p>
+            <div className="flex gap-4 mt-5">
+              <a
+                href="https://www.linkedin.com/company/vryfidllc/"
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center gap-1.5 text-[#5EEAD4] hover:text-white text-sm font-medium transition-colors"
+              >
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-2-2 2 2 0 00-2 2v7h-4v-7a6 6 0 016-6zM2 9h4v12H2z" />
+                  <circle cx="4" cy="4" r="2" />
+                </svg>
+                LinkedIn
+              </a>
+              <a
+                href="https://www.instagram.com/gabe_einhorn/"
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center gap-1.5 text-[#5EEAD4] hover:text-white text-sm font-medium transition-colors"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                  <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
+                  <circle cx="12" cy="12" r="4" />
+                  <circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none" />
+                </svg>
+                Instagram
+              </a>
+            </div>
+          </div>
+
+          {/* link columns */}
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-8">
+            {[
+              {
+                heading: "Product",
+                links: [
+                  ["Agent-Matched Living", "#"],
+                  ["Neighborhood Vibes", "https://VryfIDVibes.com"],
+                  ["Vibe Score", "https://VryfIDVibes.com"],
+                  ["Share Card", "#"],
+                ],
+              },
+              {
+                heading: "Company",
+                links: [
+                  ["About VryfID", "#"],
+                  ["How It Works", "#"],
+                  ["For Landlords", "#"],
+                  ["Partnerships", "#"],
+                ],
+              },
+              {
+                heading: "Legal",
+                links: [
+                  ["Privacy Policy", "#"],
+                  ["Terms of Service", "#"],
+                  ["Disclaimer", "#"],
+                ],
+              },
+            ].map(({ heading, links }) => (
+              <div key={heading}>
+                <p className="text-white font-semibold text-sm mb-3">{heading}</p>
+                <ul className="space-y-2">
+                  {links.map(([label, href]) => (
+                    <li key={label}>
+                      <a
+                        href={href}
+                        target={href.startsWith("http") ? "_blank" : undefined}
+                        rel="noreferrer"
+                        className="text-[#8FA29F] hover:text-[#CFFAF4] text-sm transition-colors"
+                      >
+                        {label}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* bottom bar */}
+        <div className="pt-6 flex flex-col md:flex-row items-center justify-between gap-3">
+          <p className="text-[#6B7F7C] text-xs">
+            © 2026 VryfID LLC. All rights reserved.
+          </p>
+          <div className="flex items-center gap-4">
+            <span className="text-[#6B7F7C] text-xs">
+              Product concept demo — listings &amp; pricing are illustrative.
+            </span>
+            <a
+              href="https://VryfIDVibes.com"
+              target="_blank"
+              rel="noreferrer"
+              className="text-[#5EEAD4] text-xs font-medium hover:text-white transition-colors"
+            >
+              VryfIDVibes.com →
+            </a>
+          </div>
+        </div>
+      </div>
+    </footer>
+  );
+}
+
 function AlsoConsiderCard({ listing, rank, isViewing, onSelect }) {
   const tier = getVibeTier(listing.vibeData.vibeScore);
   return (
@@ -842,7 +960,12 @@ function ListingSection({ ranked, message, onMessageChange, onSend, onStartOver,
 
         {/* map */}
         <div className="mb-6">
-          <MapView listing={viewing} isPrimary={isPrimary} />
+          <MapView
+            listing={viewing}
+            ranked={ranked.slice(0, 3)}
+            isPrimary={isPrimary}
+            onSelect={selectListing}
+          />
         </div>
 
         {/* listing details + message */}
@@ -972,12 +1095,7 @@ function ListingSection({ ranked, message, onMessageChange, onSend, onStartOver,
         )}
       </div>
 
-      <footer className="border-t border-[#E8E0D5] mt-4">
-        <div className="max-w-5xl mx-auto px-6 py-7 flex flex-col md:flex-row items-center justify-between gap-3">
-          <Logo />
-          <p className="text-slate-300 text-xs">Product concept demo · All listings and pricing are illustrative.</p>
-        </div>
-      </footer>
+      <VryfIDFooter />
 
       <Toast visible={toast} />
     </div>
