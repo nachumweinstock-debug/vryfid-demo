@@ -958,16 +958,66 @@ function ListingSection({ ranked, message, onMessageChange, onSend, onStartOver,
 
       <div className="max-w-5xl mx-auto px-6 py-10">
 
-        {/* match / viewing context */}
-        <div className="flex items-center gap-3 mb-6" ref={mapRef}>
-          <span className={`px-3 py-1 rounded-full text-[11px] font-semibold ${isPrimary ? "bg-[#1B3A6B] text-white" : "bg-[#DBEAFE] text-[#1B3A6B]"}`}>
-            {isPrimary ? "#1 Match" : "Also Consider"}
-          </span>
-          <h2 className="font-serif text-[#1B3A6B] text-2xl md:text-3xl leading-tight truncate">{viewing.street}</h2>
-          <span className="text-slate-400 text-sm hidden md:block flex-shrink-0">{viewing.neighborhood}</span>
+        {/* ── Wolt-style listing strip ── */}
+        <div className="mb-4" ref={mapRef}>
+          <p className="text-[#1B3A6B] text-[11px] font-semibold uppercase tracking-[0.2em] mb-3">
+            Your Matches
+          </p>
+          <div className="flex gap-3 overflow-x-auto pb-1 scrollbar-hide">
+            {ranked.slice(0, Math.min(ranked.length, 4)).map((l, i) => {
+              const active = l.id === viewing.id;
+              const tier = getVibeTier(l.vibeData.vibeScore);
+              return (
+                <button
+                  key={l.id}
+                  onClick={() => selectListing(l)}
+                  className={`
+                    flex-shrink-0 w-60 text-left rounded-2xl px-4 py-3.5
+                    border-2 transition-all duration-200 active:scale-[0.97]
+                    ${active
+                      ? "bg-[#1B3A6B] border-[#1B3A6B] shadow-lg shadow-[#1B3A6B]/20"
+                      : "bg-white border-[#E8E0D5] hover:border-[#1B3A6B] hover:shadow-md"}
+                  `}
+                >
+                  {/* rank + address */}
+                  <div className="flex items-start gap-2 mb-1.5">
+                    <span className={`flex-shrink-0 w-5 h-5 rounded-full text-[10px] font-bold flex items-center justify-center mt-px
+                      ${active ? "bg-white/20 text-white" : "bg-[#FAF7F2] text-[#1B3A6B]"}`}>
+                      {i + 1}
+                    </span>
+                    <span className={`font-semibold text-sm leading-tight truncate
+                      ${active ? "text-white" : "text-[#1B3A6B]"}`}>
+                      {l.street}
+                    </span>
+                  </div>
+
+                  {/* neighborhood */}
+                  <p className={`text-xs mb-2.5 pl-7 truncate
+                    ${active ? "text-white/55" : "text-slate-400"}`}>
+                    {l.neighborhood}
+                  </p>
+
+                  {/* price + vibe */}
+                  <div className="flex items-center justify-between pl-7">
+                    <span className={`font-bold text-sm ${active ? "text-white" : "text-[#1B3A6B]"}`}>
+                      {l.price}
+                      <span className={`text-[11px] font-normal ml-0.5
+                        ${active ? "text-white/50" : "text-slate-400"}`}>/mo</span>
+                    </span>
+                    <span
+                      className="text-[11px] font-semibold"
+                      style={{ color: active ? "rgba(255,255,255,0.75)" : tier.color }}
+                    >
+                      {l.vibeData.vibeScore} {tier.emoji}
+                    </span>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
         </div>
 
-        {/* map */}
+        {/* ── 3D map ── */}
         <div className="mb-6">
           <MapView
             listing={viewing}
@@ -1081,27 +1131,7 @@ function ListingSection({ ranked, message, onMessageChange, onSend, onStartOver,
           <VibeScoreSection listing={viewing} />
         </div>
 
-        {/* Also Consider */}
-        {ranked.length > 1 && (
-          <div>
-            <div className="flex items-center gap-3 mb-4">
-              <h3 className="font-serif text-[#1B3A6B] text-2xl">Also Consider</h3>
-              <div className="flex-1 h-px bg-[#E8E0D5]" />
-              <span className="text-slate-400 text-xs">click to explore</span>
-            </div>
-            <div className="grid md:grid-cols-3 gap-4">
-              {ranked.slice(1, 4).map((l, i) => (
-                <AlsoConsiderCard
-                  key={l.id}
-                  listing={l}
-                  rank={i + 2}
-                  isViewing={viewing.id === l.id}
-                  onSelect={selectListing}
-                />
-              ))}
-            </div>
-          </div>
-        )}
+        {/* listings strip at bottom is now the primary nav — no duplicate Also Consider section */}
       </div>
 
       <VryfIDFooter />
